@@ -68,29 +68,33 @@ void peonum_camera(cv::Mat frame_full)
 	cv::imshow("peo_show", peo_show);
 	cv::waitKey(1);
 }
-IplImage* showImg = cvCreateImage(cvSize(videoWidth, videoHeight), 8, 3);
+
 void lane_camera_box(cv::Mat frame_full)
 {
 	lane_init();
 	
 	
 	cv::Mat gray;
-	//cv::cvtColor(frame_full, gray, COLOR_BGR2GRAY);
-	IplImage temp_img(frame_full);
+	cv::cvtColor(frame_full, gray, COLOR_BGR2GRAY);
+	IplImage* showImg = cvCreateImage(cvSize(jp6_camera._lane_width, jp6_camera._lane_height), 8, 1);
+	IplImage temp_img(gray);
 	//printf("Undistline duration:%ld ms\n", (time_end.tv_sec-time_start.tv_sec) * 1000 + (time_end.tv_nsec-time_start.tv_nsec)/1000000);
 	//Undistline(&temp_img, showImg);
 	//Undist(&temp_img, showImg, jp6_camera._lane_width, jp6_camera._lane_height, jp6_camera._lane_x, jp6_camera._lane_y);
-	Undistall(&temp_img, showImg);
-	cv::Mat line_all = cvarrToMat(showImg);
-	cv::resize(line_all, line_all, cv::Size(videoWidth / 2, videoHeight / 2));
+	//Undistall(&temp_img, showImg);
+	Undist_line(&temp_img, showImg, jp6_camera._lane_width, jp6_camera._lane_height, jp6_camera._lane_x, jp6_camera._lane_y);
+	cv::Mat line = cvarrToMat(showImg);
+	/*cv::resize(line_all, line_all, cv::Size(videoWidth / 2, videoHeight / 2));
 	cv::flip(line_all.rowRange(videoHeight / 4, videoHeight / 2), line_all.rowRange(videoHeight / 4, videoHeight / 2), 1);
 	cv::Mat line_rectage(Size(videoWidth, videoHeight / 4),CV_8UC3);
 	line_all.rowRange(0, videoHeight / 4).copyTo(line_rectage.colRange(0, videoWidth / 2));
-	line_all.rowRange(videoHeight / 4, videoHeight / 2).copyTo(line_rectage.colRange(videoWidth / 2, videoWidth));
-	cv::cvtColor(line_rectage, gray, COLOR_BGR2GRAY);
-	cv::Mat line = gray(cv::Rect(jp6_camera._lane_x, jp6_camera._lane_y, jp6_camera._lane_width, jp6_camera._lane_height));
+	line_all.rowRange(videoHeight / 4, videoHeight / 2).copyTo(line_rectage.colRange(videoWidth / 2, videoWidth));*/
+	
+	imshow("salfsd", line);
+	//cv::Mat line = gray(cv::Rect(jp6_camera._lane_x, jp6_camera._lane_y, jp6_camera._lane_width, jp6_camera._lane_height));
 	//cv::imshow("bug",line);
 	cv::resize(line, line,cv::Size(300, 170));
+	cv::imwrite("bug.jpg", line);
 	linefind(line);
 
 }

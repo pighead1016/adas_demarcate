@@ -100,7 +100,7 @@ int Undist(IplImage *img, IplImage *dst,int width,int height,int x,int y,int up_
 
 		int j = (i-yy*width*2)+ x*2 + (yy+ y*2)*videoWidth/2;
 		//int j = i%jp6_camera._lane_width * 2 + jp6_camera._lane_x * 2 + (i / jp6_camera._lane_width * 2 + jp6_camera._lane_y * 2)*videoWidth;
-		*(dst->imageData + i) = gammaarray[uchar(*(img->imageData + g_visualTemplate[j + videoHeight*videoWidth*up_down / 2]))];
+		*(dst->imageData + i) = uchar(*(img->imageData + g_visualTemplate[j + videoHeight*videoWidth*up_down / 2]));
 		//*(dst->imageData + i * 3 + 0) = *(img->imageData + g_visualTemplate[j + videoHeight*videoWidth*up_down / 2] * 3 + 0);
 		//*(dst->imageData + i * 3 + 1) = *(img->imageData + g_visualTemplate[j + videoHeight*videoWidth*up_down / 2] * 3 + 1);
 		//*(dst->imageData + i * 3 + 2) = *(img->imageData + g_visualTemplate[j + videoHeight*videoWidth*up_down / 2] * 3 + 2);
@@ -127,12 +127,24 @@ void Undistline(IplImage *img, IplImage *dst)
 	}
 	
 }*/
-int Undistall(IplImage *img, IplImage *dst)
+
+int Undist_line(IplImage *img, IplImage *dst,int _lane_width,int _lane_height,int _lane_x,int _lane_y)
 {
 	if (g_visualTemplate == NULL || img == NULL || dst == NULL)
 	{
 		return -1;
 	}
+	for (int i = 0; i < _lane_width*_lane_height; ++i)
+	{
+		int x = i%_lane_width;
+		int y = i / _lane_width;
+		int j = (x + _lane_x) * 2 + (y + _lane_y) * 2 * videoWidth;
+		*(dst->imageData + i) = /*gammaarray[*/uchar(*(img->imageData + g_visualTemplate[j] /*g_visualline[i]*/))/*]*/;//int(f*f*f*255);
+	}
+}
+int Undistall(IplImage *img, IplImage *dst)
+{
+	
 
 	for (int i = 0; i < videoHeight*videoWidth; ++i)
 	{

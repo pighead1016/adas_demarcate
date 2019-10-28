@@ -20,6 +20,7 @@ static int* g_visualline = new int[videoWidth*videoHeight];
 //static int* g_visualface = new int[face_width*face_height];
 void CreateDstmap(int centerx, int centery, int radis, int srcHeigth, int srcWidth, int dstHeigth, int dstWidth);
 int Undist(IplImage *img, IplImage *dst, int width, int height, int x, int y, int up_down=0);
+int Undist_line(IplImage *img, IplImage *dst, int _lane_width, int _lane_height, int _lane_x, int _lane_y);
 void Undistline(IplImage *img, IplImage *dst);
 int Undistall(IplImage *img, IplImage *dst);
 //void Undistface(IplImage *img, IplImage *dst);

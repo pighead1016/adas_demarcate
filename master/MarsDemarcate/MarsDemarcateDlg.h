@@ -67,6 +67,7 @@ public:
 	CEdit editSHOUDER_R;
 	CEdit editNOSE_L;
 	CEdit editNOSE_R;
+	CEdit editNOSE_C;
 	CButton cboxLaneLlock;
 	CButton cboxLaneRlock;
 	afx_msg void OnBnClickedCheckLaneDR();
@@ -90,4 +91,5 @@ public:
 	afx_msg void OnBnClickedRFace();
 	afx_msg void OnBnClickedCanncel();
 	afx_msg void OnBnClickedCal();
+	afx_msg void OnBnClickedCFace();
 };

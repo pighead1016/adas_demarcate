@@ -514,7 +514,7 @@ float p2p_angle(cv::Point2f org, cv::Point2f p)
 	return atan2f(org.y - p.y, p.x - org.x);
 }
 
-bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<int> keyshape,const float threshold, float scale,cv::Point2f & nose_p_from_keypoint_temp,float& rear_angle,float& turn_face)
+bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<int> keyshape,const float threshold, float scale,cv::Point2f & nose_p_from_keypoint_temp,float& rear_angle,float& turn_face,float& turn_ear)
 {
 	bool ret = false;
 	//smoke_phone_action_temp = false;
@@ -547,7 +547,8 @@ bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<i
 			tired_p[3] = cv::Point2f(keypoints[tired_part], keypoints[tired_part + 1]);
 		if (tired_flag)
 		{
-		float shouder_angle = p2p_angle(tired_p[1], tired_p[2]);
+			turn_ear = (tired_p[3].x - tired_p[1].x) / (tired_p[2].x - tired_p[1].x);
+			float shouder_angle = p2p_angle(tired_p[1], tired_p[2]);
 	//		float nose_angle = p2p_angle(tired_p[2], tired_p[0]);
 			float _rear_angle= p2p_angle(tired_p[0],tired_p[3]);
 		//	float nose_dis = sin(nose_angle - shouder_angle)*p2p_distance(tired_p[0], tired_p[2]) / p2p_distance(tired_p[1], tired_p[2]);
@@ -722,7 +723,7 @@ void releaseBlob_local(BlobData** blob) {
 	}
 }
 
-bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,int & act_peonum_temp)
+bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,float& turn_ear,int & act_peonum_temp)
 {
 	cv::Mat image;
 	cv::cvtColor(image_gray,image,CV_GRAY2BGR);
@@ -772,7 +773,7 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 
 	//if(shape.size()>0)
 		act_peonum_temp=shape[0];
-	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle,turn_face);
+	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle,turn_face,turn_ear);
 	
 	//log_write("the nose at(%3.2f,%3.2f)\n",nose_p_from_keypoint_temp.x,nose_p_from_keypoint_temp.y);
 	releaseBlob_local(&net_output);

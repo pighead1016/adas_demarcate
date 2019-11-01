@@ -408,7 +408,7 @@ UINT  faceStream(LPVOID  pParam)
 		if (!show_flag)
 			break;
 		cap.read(frame_full);
-		//frame_full = imread("卞师傅/192.168.0.169_01_01_20190808T161103.325Z.jpg");
+		//frame_full = imread("卞师傅/正面.jpg");
 		cv::namedWindow("face_show");
 
 		face_camera(frame_full);
@@ -483,6 +483,7 @@ void CMarsDemarcateDlg::OnBnClickedButtonFaceDemarcate2()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	init_nose_arm_mark("arm25.param","arm25.bin");
+	//init_nose_arm_mark("xn_pose.param", "xn_pose.bin");
 	left_turn_data.clear();
 	right_turn_data.clear();
 	right_turn_data.clear();

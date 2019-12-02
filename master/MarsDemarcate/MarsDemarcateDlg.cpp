@@ -180,13 +180,6 @@ BOOL CMarsDemarcateDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 	AfxSocketInit();
-
-	if (!cSocket.Create())
-	{
-		editInfo.ReplaceSel(L"创建失败\r\n");
-	}
-
-
 	if (PathFileExists(L".\\readme.txt"))
 	{
 
@@ -293,6 +286,11 @@ void CMarsDemarcateDlg::OnBnClickedButtonConnect()
 		//cSocket.m_nTimeOut = 100;
 		strIP.Format(_T("%d.%d.%d.%d"), nf1, nf2, nf3, nf4);//这里的nf得到的值是IP值了
 		//转换需要连接的端口内容类型
+
+		if (!cSocket.Create())
+		{
+			editInfo.ReplaceSel(L"创建失败\r\n");
+		}
 		int nPort = 8880;
 
 		if (cSocket.Connect(strIP, nPort)){
@@ -300,6 +298,7 @@ void CMarsDemarcateDlg::OnBnClickedButtonConnect()
 		}
 		else {
 			editInfo.ReplaceSel(L"连接失败\r\n");
+			cSocket.Close();
 			return;
 		}
 }
@@ -781,10 +780,11 @@ void CMarsDemarcateDlg::OnBnClickedButtonSure()
 			jp6_camera._right_turn = ( noser- shouderl ) / (shouderr - shouderl);
 		}
 		*/
-		float th = 0.8;
+		float th = 1;
 		jp6_camera._left_turn = mean_left*th + mean_center_ear*(1 - th);
 		jp6_camera._right_turn = mean_right*th + mean_center*(1 - th);
-
+		jp6_camera._left_bias = mean_center_ear - mean_left;
+		jp6_camera._right_bias = mean_right - mean_center;
 
 
 		nose_arm_mark.clear();

@@ -19,7 +19,7 @@ struct adas_camera
 	int _face_x=350;
 	int _face_y=1026;
 	int _face_width=400;
-	int _face_height=480;
+	int _face_height=400;
 	/****peo_num box***********/
 	int _peo_num_x=340;
 	int _peo_num_y=910;

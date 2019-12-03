@@ -749,12 +749,12 @@ void releaseBlob_local(BlobData** blob) {
 
 bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,float& turn_ear,int & act_peonum_temp)
 {
-	
+	//image_gray = image_gray(cv::Rect(0, 0, image_gray.cols , image_gray.cols));
 	cv::Mat image;
 	cv::cvtColor(image_gray,image,CV_GRAY2BGR);
 	//image = image(cv::Rect(0, 0, image_gray.cols, image_gray.cols));
 	bool ret=false;
-	int input_width = 80,input_height=96;
+	int input_width = 88,input_height=88;
 	
 	cv::Size baseSize = cv::Size(input_width, input_height);  //Size(656, 368);
 	float scale = 0;
@@ -798,13 +798,13 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 	//with xn_posenms(input, nms_out, 0.15); 
 	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 7, 0.2, 7, 0.14, 1, shape);
 
-	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.2, 8, 0.6, 1, shape);
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
 	//messagefile<<"Has "<<shape[0]<<"peopel"<<std::endl;
 	//if(shape.size()>0)
 		act_peonum_temp=shape[0];
 		// with xn_poseret = renderKeypointsCpu(image, keypoints, shape, 0.053, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear);
 
-	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle,turn_face,turn_ear);
+	ret = renderKeypointsCpu(image, keypoints, shape, 0.2, scale,nose_p_from_keypoint_temp,rear_angle,turn_face,turn_ear);
 	/*int numberKeypoints = shape[1];
 	for (auto person = 0; person < act_peonum_temp; person++)
 	{
@@ -821,7 +821,8 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 		}
 	}
 	//renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle);
-	imshow("act", image);*/
+	imshow("act", image);
+	cv::waitKey(1);*/
 	//log_write("the nose at(%3.2f,%3.2f)\n",nose_p_from_keypoint_temp.x,nose_p_from_keypoint_temp.y);
 	releaseBlob_local(&net_output);
 	releaseBlob_local(&input);

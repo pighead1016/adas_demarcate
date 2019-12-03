@@ -38,7 +38,7 @@ void face_camera(cv::Mat frame_full)
 	
 	resize(face_mask_show, face_mask_show, Size(245, 280));
 	flip(face_mask_show, face_mask_show, 1);
-	Mat mask=Mat::zeros(Size(420, 480), CV_8UC1);
+	Mat mask=Mat::zeros(Size(400, 480), CV_8UC1);
 	face_mask_show = 255 - face_mask_show;
 	face_mask_show.copyTo(mask(Rect((mask.cols-face_mask_show.cols)/2, 40, face_mask_show.cols, face_mask_show.rows)));
 		//warpAffine(face_mask_show, rot_img, rotate, Size(face_mask_show.cols, face_mask_show.rows));
@@ -90,11 +90,11 @@ void lane_camera_box(cv::Mat frame_full)
 	line_all.rowRange(0, videoHeight / 4).copyTo(line_rectage.colRange(0, videoWidth / 2));
 	line_all.rowRange(videoHeight / 4, videoHeight / 2).copyTo(line_rectage.colRange(videoWidth / 2, videoWidth));*/
 	
-	imshow("salfsd", line);
+	//imshow("salfsd", line);
 	//cv::Mat line = gray(cv::Rect(jp6_camera._lane_x, jp6_camera._lane_y, jp6_camera._lane_width, jp6_camera._lane_height));
 	//cv::imshow("bug",line);
 	cv::resize(line, line,cv::Size(300, 170));
-	cv::imwrite("bug.jpg", line);
+	//cv::imwrite("bug.jpg", line);
 	linefind(line);
 
 }

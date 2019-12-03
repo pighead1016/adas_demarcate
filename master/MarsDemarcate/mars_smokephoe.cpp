@@ -99,8 +99,13 @@ struct BlobData {
 	int capacity_count;		//����ռ��Ԫ�ظ������ȣ��ֽ����� * sizeof(float)
 };
 //const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,17 };
-const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1, 2, 1, 5, 2, 3, 3, 4, 5, 6, 6, 7
-,1, 8, 8, 9, 9, 10, 1, 11, 11, 12, 12, 13, 1, 0, 0, 14, 14, 16, 0, 15, 15, 17};
+const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1 , 8,1, 2 , 1, 5,
+2, 3, 3, 4, 5, 6, 6, 7,
+8, 9, 8,12,
+9,10,10,11,
+12,13,13,14,
+1, 0, 0,16, 0,15,15,17,16,18,
+2,17, 5,18 };
 
 const unsigned int POSE_MAX_PEOPLE = 5;
 const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,18 };
@@ -744,10 +749,12 @@ void releaseBlob_local(BlobData** blob) {
 
 bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,float& turn_ear,int & act_peonum_temp)
 {
+	
 	cv::Mat image;
 	cv::cvtColor(image_gray,image,CV_GRAY2BGR);
+	//image = image(cv::Rect(0, 0, image_gray.cols, image_gray.cols));
 	bool ret=false;
-	int input_width = 84,input_height=96;
+	int input_width = 80,input_height=96;
 	
 	cv::Size baseSize = cv::Size(input_width, input_height);  //Size(656, 368);
 	float scale = 0;
@@ -791,15 +798,15 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 	//with xn_posenms(input, nms_out, 0.15); 
 	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 7, 0.2, 7, 0.14, 1, shape);
 
-	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.2, 8, 0.6, 1, shape);
 	//messagefile<<"Has "<<shape[0]<<"peopel"<<std::endl;
 	//if(shape.size()>0)
 		act_peonum_temp=shape[0];
 		// with xn_poseret = renderKeypointsCpu(image, keypoints, shape, 0.053, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear);
 
 	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle,turn_face,turn_ear);
-	int numberKeypoints = shape[1];
-	/*for (auto person = 0; person < act_peonum_temp; person++)
+	/*int numberKeypoints = shape[1];
+	for (auto person = 0; person < act_peonum_temp; person++)
 	{
 		for (size_t pn = 0; pn<POSE_COCO_PAIRS_RENDER.size(); pn += 2)
 		{

@@ -1219,6 +1219,8 @@ int linefind(Mat findline)
 	
 	drawlrLines(hlines_img, filtered_lines);
 	//refresh_lane(filtered_lines, hough_left, hough_right);
+	cv::line(hlines_img, vertices[0], vertices[1], Scalar(0), 3);
+	cv::line(hlines_img, vertices[2], vertices[3], Scalar(0), 3);
 	imshow("lane", hlines_img);
 	//imwrite("lane.jpg",hlines_img);
 	waitKey(1);

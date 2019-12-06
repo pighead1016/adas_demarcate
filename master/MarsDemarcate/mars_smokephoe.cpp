@@ -108,8 +108,9 @@ const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1 , 8,1, 2 , 1, 5,
 2,17, 5,18 };
 
 const unsigned int POSE_MAX_PEOPLE = 5;
-const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,18 };
-
+const std::vector<unsigned int> TIRED_RENDER{ 0,2,5};
+const std::vector<unsigned int> FACE_RENDER{ 0,15,16,17,18 };
+const std::vector<unsigned int> EYESHOUDER_RENDER{ 15,16,2,5,1 };
 //656x368
 cv::Mat getImage(const cv::Mat& im, cv::Size baseSize = cv::Size(656, 368), float* scale = 0) {
 	int w = baseSize.width;
@@ -544,7 +545,7 @@ float p2p_angle(cv::Point2f org, cv::Point2f p)
 	return atan2f(org.y - p.y, p.x - org.x);
 }
 
-bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<int> keyshape,const float threshold, float scale,cv::Point2f & nose_p_from_keypoint_temp,float& rear_angle,float& turn_face,float& turn_ear)
+bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<int> keyshape,const float threshold, float scale,cv::Point2f & nose_p_from_keypoint_temp,float& rear_angle,float& turn_face,float& turn_ear,int left_point_detection)
 {
 	bool ret = false;
 	//smoke_phone_action_temp = false;
@@ -560,7 +561,7 @@ bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<i
 	{
 		cv::Point2f tired_p[4];
 		bool tired_flag = true;
-		for (size_t tie_num = 0; tie_num < TIRED_RENDER.size()-1; tie_num++)
+		for (size_t tie_num = 0; tie_num < TIRED_RENDER.size(); tie_num++)
 		{
 			int tired_part= (person * numberKeypoints + TIRED_RENDER[tie_num]) * keyshape[2];
 			tired_flag = tired_flag & (keypoints[tired_part + 2] > threshold);
@@ -572,7 +573,7 @@ bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<i
 			turn_face = (tired_p[0].x - tired_p[1].x) /(tired_p[2].x - tired_p[1].x);
 			
 		}
-			int tired_part= (person * numberKeypoints + TIRED_RENDER[3]) * keyshape[2];
+			int tired_part= (person * numberKeypoints + left_point_detection) * keyshape[2];
 			tired_flag = tired_flag & (keypoints[tired_part + 2] > threshold);
 			tired_p[3] = cv::Point2f(keypoints[tired_part], keypoints[tired_part + 1]);
 		if (tired_flag)
@@ -635,33 +636,39 @@ bool renderKeypointsCpu(cv::Mat& frame, const vector<float>& keypoints, vector<i
 		if (right_arm&&nose)
 		{
 			float angle2;
-			bool _near,hup=false;// = (p2p_distance(nose_p, arm_p[6])<p2p_distance(arm_p[5], arm_p[6]));//nose is nearer the wrist than elbow
+			bool _near, hup = false, belt = false;// = (p2p_distance(nose_p, arm_p[6])<p2p_distance(arm_p[5], arm_p[6]));//nose is nearer the wrist than elbow
 			cv::line(showcolor, arm_p[4], arm_p[5], cv::Scalar(255, 0, 255), 3, 4);
 			cv::line(showcolor, arm_p[6], arm_p[5], cv::Scalar(255, 255, 0), 3, 4);
 			angle2 = cos_vector(arm_p[5], arm_p[4], arm_p[6], arm_p[5]);
 			float rhx = (3 * arm_p[6].x - arm_p[5].x) / 2;
 			float rhy = (3 * arm_p[6].y - arm_p[5].y) / 2;
-			if(lshouder)
+			if (lshouder)
 			{
 				//cout<<arm_p[1]<<" 4 "<<arm_p[4]<<" 5 "<<arm_p[5]<<" 6 "<<arm_p[6]<<" "<<rhx<< "  "<<rhy<<endl;
-				float a1=atan2f(arm_p[1].y-arm_p[4].y,arm_p[4].x-arm_p[1].x);
-				float a2=atan2f(arm_p[1].y-rhy,rhx-arm_p[1].x);
-				float right_hand_up=a2-a1;
-				if (right_hand_up>M_PI)
-					right_hand_up-=2*M_PI;
-				if (right_hand_up<-M_PI)
-					right_hand_up+=2*M_PI;
-				if(right_hand_up>0&&right_hand_up<M_PI)
-					hup=true;
+				float a1 = atan2f(arm_p[1].y - arm_p[4].y, arm_p[4].x - arm_p[1].x);
+				float a2 = atan2f(arm_p[1].y - rhy, rhx - arm_p[1].x);
+				float right_hand_up = a2 - a1;
+				if (right_hand_up > M_PI)
+					right_hand_up -= 2 * M_PI;
+				if (right_hand_up < -M_PI)
+					right_hand_up += 2 * M_PI;
+				if (right_hand_up > 0 && right_hand_up < M_PI)
+					hup = true;
 				//cout << "right:angle,distance-> " <<  angle2 << "," << a1<<":"<<a2 << endl;
 			}
-			if(angle2<0)
+			if (angle2 < 0)
 			{
 				cv::putText(showcolor, "R", cv::Point(frame.cols - 20, 20), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 0, 255), 2);
 				//cv::imwrite("R.jpg", showcolor);	
 			}
+			float belt_socer = cos_vector(arm_p[1], arm_p[5], arm_p[6], arm_p[5]);
+			if (fabs(belt_socer) < 0.99)
+			{
+				belt = true;
+				//cv::waitKey(0);
+			}
 			_near=true;//ignore nose distance
-			if (angle2<-0.3 && hup)
+			if (angle2<-0.3 && hup&&belt)
 			{
 				//cv::putText(frame, "R", cv::Point(frame.cols - 20, 20), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 0, 255), 2);
 				//smoke_phone_action_temp = true;
@@ -747,8 +754,9 @@ void releaseBlob_local(BlobData** blob) {
 	}
 }
 
-bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,float& turn_ear,int & act_peonum_temp)
+bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& rear_angle, float& turn_face,float& turn_ear,int & act_peonum_temp,int left_point_detection)
 {
+	//image_gray = cv::imread("d://workspace/ll20191205154506.jpg",0);
 	//image_gray = image_gray(cv::Rect(0, 0, image_gray.cols , image_gray.cols));
 	cv::Mat image;
 	cv::cvtColor(image_gray,image,CV_GRAY2BGR);
@@ -798,36 +806,66 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 	//with xn_posenms(input, nms_out, 0.15); 
 	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 7, 0.2, 7, 0.14, 1, shape);
 
-	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 6, 0.4, 1, shape);
 	//messagefile<<"Has "<<shape[0]<<"peopel"<<std::endl;
 	//if(shape.size()>0)
 		act_peonum_temp=shape[0];
 		// with xn_poseret = renderKeypointsCpu(image, keypoints, shape, 0.053, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear);
 
-	ret = renderKeypointsCpu(image, keypoints, shape, 0.2, scale,nose_p_from_keypoint_temp,rear_angle,turn_face,turn_ear);
-	/*int numberKeypoints = shape[1];
+	int numberKeypoints = shape[1];
+
 	for (auto person = 0; person < act_peonum_temp; person++)
 	{
-		for (size_t pn = 0; pn<POSE_COCO_PAIRS_RENDER.size(); pn += 2)
+		bool eye_and_shouder = true;
+		vector<cv::Point2f> eye_and_shouder_point(EYESHOUDER_RENDER.size());
+		for (size_t pn = 0; pn<EYESHOUDER_RENDER.size(); pn += 1)
 		{
-			const int index1 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn])*shape[2];
-			const int index2 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn + 1])*shape[2];
-			if (keypoints[index1]>0.05&&keypoints[index2]>0.05)
-			{
-				const cv::Point kp1(intRound(keypoints[index1] * scale), intRound(keypoints[index1 + 1] * scale));
-				const cv::Point kp2(intRound(keypoints[index2] * scale), intRound(keypoints[index2 + 1] * scale));
-				line(image, kp1, kp2, cv::Scalar(0, 128, 255), 2);
+			const int index1 = (person*numberKeypoints + EYESHOUDER_RENDER[pn])*shape[2];
+			if (keypoints[index1 + 2] > 0.2) {
+				eye_and_shouder_point[pn]=cv::Point2f(keypoints[index1],keypoints[index1 + 1]);
+			}
+			else {
+				eye_and_shouder = false;
+				//return false;
 			}
 		}
+		if (eye_and_shouder) {
+			float angleshouder = atan2f((eye_and_shouder_point[3].y - eye_and_shouder_point[2].y), (eye_and_shouder_point[3].x - eye_and_shouder_point[2].x));
+			float angleeye = atan2f((eye_and_shouder_point[1].y - eye_and_shouder_point[0].y), (eye_and_shouder_point[1].x - eye_and_shouder_point[0].x));
+			cv::Mat rotate = cv::getRotationMatrix2D(eye_and_shouder_point[4], (angleeye - angleshouder) * 180 / M_PI, 1);
+			for (size_t pn = 0; pn<FACE_RENDER.size(); pn += 1)
+			{
+				const int index1 = (person*numberKeypoints + FACE_RENDER[pn])*shape[2];
+				cv::Mat p = (cv::Mat_<double>(3, 1) << double(keypoints[index1]), double(keypoints[index1 + 1]), 1.0);
+				cv::Mat rp = rotate*p;
+				keypoints[index1] = float(rp.at<double>(0));
+				keypoints[index1+1] =float( rp.at<double>(1));
+			}
+		}
+		//for (size_t pn = 0; pn<POSE_COCO_PAIRS_RENDER.size(); pn += 2)
+		//{
+		//	const int index1 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn])*shape[2];
+		//	const int index2 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn + 1])*shape[2];
+		//	if (keypoints[index1+2]>0.05&&keypoints[index2+2]>0.05)
+		//	{
+		//		const cv::Point kp1(intRound(keypoints[index1] * scale), intRound(keypoints[index1 + 1] * scale));
+		//		const cv::Point kp2(intRound(keypoints[index2] * scale), intRound(keypoints[index2 + 1] * scale));
+		//		line(image, kp1, kp2, cv::Scalar(0, 128, 255), 2);
+		//	}
+		//}
 	}
+
+	/*
 	//renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle);
 	imshow("act", image);
-	cv::waitKey(1);*/
+	cv::waitKey(50);*/
+	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear, left_point_detection);
+
 	//log_write("the nose at(%3.2f,%3.2f)\n",nose_p_from_keypoint_temp.x,nose_p_from_keypoint_temp.y);
-	releaseBlob_local(&net_output);
+ 	releaseBlob_local(&net_output);
 	releaseBlob_local(&input);
 	releaseBlob_local(&nms_out);
-	return ret;
+	return true;
 }
 bool key_people_num(cv::Mat image_gray,int & act_peonum_temp,const char* deploy,const char* weight)
 {

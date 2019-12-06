@@ -92,6 +92,7 @@ void CMarsDemarcateDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_LNOSE, editNOSE_L);
 	DDX_Control(pDX, IDC_EDIT_RNOSE, editNOSE_R);
 	DDX_Control(pDX, IDC_EDIT_CNOSE, editNOSE_C);
+	DDX_Control(pDX, IDC_COMBO1, combo_c);
 }
 
 BEGIN_MESSAGE_MAP(CMarsDemarcateDlg, CDialogEx)
@@ -133,6 +134,7 @@ BEGIN_MESSAGE_MAP(CMarsDemarcateDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CANNCEL, &CMarsDemarcateDlg::OnBnClickedCanncel)
 	ON_BN_CLICKED(IDC_CAL, &CMarsDemarcateDlg::OnBnClickedCal)
 	ON_BN_CLICKED(IDC_C_FACE, &CMarsDemarcateDlg::OnBnClickedCFace)
+	ON_CBN_SELCHANGE(IDC_COMBO1, &CMarsDemarcateDlg::OnCbnSelchangeCombo1)
 END_MESSAGE_MAP()
 
 
@@ -194,6 +196,11 @@ BOOL CMarsDemarcateDlg::OnInitDialog()
 	}
 	ipToD2.SetAddress(htonl(inet_addr("192.168.0.169")));
 	ipToD.SetAddress(htonl(inet_addr("192.168.0.100")));
+	combo_c.AddString(TEXT("卡车"));
+	combo_c.AddString(TEXT("面包车"));
+	combo_c.SetCurSel(0);
+	
+	this->left_point = 18;
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -913,6 +920,7 @@ int CMarsDemarcateDlg:: save_config(struct adas_camera * p)
 	fprintf(fp, "_left_bias=%f\n", p->_left_bias);
 	fprintf(fp, "_right_weight=%f\n", p->_right_weight);
 	fprintf(fp, "_right_bias=%f\n", p->_right_bias);
+	fprintf(fp, "_left_point_detection=%d\n", p->_left_point_detection);
 	fclose(fp);
 	return 0;
 }
@@ -1237,6 +1245,7 @@ void CMarsDemarcateDlg::OnBnClickedRFace()
 	imshow("right_face", face_click);
 	destroyWindow("center_face");
 	destroyWindow("left_face");
+
 }
 
 
@@ -1334,6 +1343,8 @@ void CMarsDemarcateDlg::OnBnClickedCanncel()
 
 void CMarsDemarcateDlg::OnBnClickedCal()
 {
+	//face_state = 1;
+
 	if (face_state == 1) {
 		char buf[20];
 		float rear_angle,turnface,turn_ear=10;
@@ -1343,9 +1354,16 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_L.SetSel(0, -1);
-		
-		key_point(gray,p, rear_angle, turnface, turn_ear,peo_num);
-		if (peo_num == 1&& turn_ear != 10) {
+		bool ret;
+		//std::vector<cv::String> fils;
+		//cv::glob("d://workspace/l*.jpg", fils);
+		//for (int i = 0; i < fils.size(); i++) {
+		//	gray = imread(fils[i],0);
+		//	cv::imshow("gray", gray);
+		//	cv::waitKey(50);
+			ret=key_point(gray, p, rear_angle, turnface, turn_ear, peo_num,this->left_point);
+		//}
+		if (peo_num == 1&& turn_ear != 10 && ret==true) {
 			left_turn_data.push_back(turn_ear);
 			sprintf_s(buf, "%0.4f %d", turn_ear, left_turn_data.size());
 			int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
@@ -1359,8 +1377,10 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 
 			delete[] wide;
 		}
-		else
+		else{
 			editNOSE_L.ReplaceSel(L"not one face");
+			cv::imwrite("L.jpg", face_click);
+		}
 
 	}
 	if (face_state == 2) {
@@ -1372,7 +1392,7 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_R.SetSel(0, -1);
-		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num);
+		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num,  this->left_point);
 		if (peo_num == 1&& turnface!=10) {
 			right_turn_data.push_back(turnface);
 			sprintf_s(buf, "%0.4f %d", turnface, right_turn_data.size());
@@ -1387,8 +1407,10 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 
 			delete[] wide;
 		}
-		else
+		else {
 			editNOSE_R.ReplaceSel(L"not one face");
+			cv::imwrite("R.jpg", face_click);
+		}
 	}
 	if (face_state == 3) {
 		char buf[20];
@@ -1399,7 +1421,7 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_C.SetSel(0, -1);
-		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num);
+		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num, this->left_point);
 		if (peo_num == 1&& turnface!=10&& turn_ear!=10) {
 			center_turn_data.push_back(turnface);
 			center_ear_data.push_back(turn_ear);
@@ -1410,8 +1432,10 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 			editNOSE_C.ReplaceSel(wide);
 			delete[] wide;
 		}
-		else
+		else{
 			editNOSE_C.ReplaceSel(L"not one face");
+			cv::imwrite("C.jpg", face_click);
+		}
 	}
 	if (face_state == 1)
 		destroyWindow("left_face");
@@ -1431,4 +1455,24 @@ void CMarsDemarcateDlg::OnBnClickedCFace()
 	imshow("center_face", face_click);
 	destroyWindow("right_face");
 	destroyWindow("left_face");
+}
+
+
+void CMarsDemarcateDlg::OnCbnSelchangeCombo1()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int index = combo_c.GetCurSel();//获取当前索引
+
+	CString str;
+	combo_c.GetLBText(index, str);
+	if (str == "卡车") {
+		this->left_point = 18;
+		
+		//MessageBox(str);
+	}
+	else if((str == "面包车"))
+	{
+		this->left_point = 0;
+	}
+	jp6_camera._left_point_detection = this->left_point;
 }

@@ -40,6 +40,7 @@ struct adas_camera
 	float _left_bias;//Ô¤Áô
 	float _right_weight;//Ô¤Áô
 	float _right_bias;//Ô¤Áô
+	int _left_point_detection=18;
 };
 
 void camera(cv::Mat frame_full);

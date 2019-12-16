@@ -93,6 +93,8 @@ void CMarsDemarcateDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_RNOSE, editNOSE_R);
 	DDX_Control(pDX, IDC_EDIT_CNOSE, editNOSE_C);
 	DDX_Control(pDX, IDC_COMBO1, combo_c);
+	DDX_Control(pDX, IDC_COMBO_PORT, combo_port);
+
 }
 
 BEGIN_MESSAGE_MAP(CMarsDemarcateDlg, CDialogEx)
@@ -135,6 +137,8 @@ BEGIN_MESSAGE_MAP(CMarsDemarcateDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CAL, &CMarsDemarcateDlg::OnBnClickedCal)
 	ON_BN_CLICKED(IDC_C_FACE, &CMarsDemarcateDlg::OnBnClickedCFace)
 	ON_CBN_SELCHANGE(IDC_COMBO1, &CMarsDemarcateDlg::OnCbnSelchangeCombo1)
+	ON_CBN_SELCHANGE(IDC_COMBO_PORT, &CMarsDemarcateDlg::OnCbnSelchangeComboPort)
+	//ON_CBN_SELCHANGE(IDC_COMBO_PORT, &CMarsDemarcateDlg::OnselectPort)
 END_MESSAGE_MAP()
 
 
@@ -196,11 +200,18 @@ BOOL CMarsDemarcateDlg::OnInitDialog()
 	}
 	ipToD2.SetAddress(htonl(inet_addr("192.168.0.169")));
 	ipToD.SetAddress(htonl(inet_addr("192.168.0.100")));
+	//ipToD.SetAddress(htonl(inet_addr("192.168.1.123")));//发给刘哥服务器网址
 	combo_c.AddString(TEXT("卡车"));
 	combo_c.AddString(TEXT("面包车"));
+	combo_port.AddString(TEXT("部标机"));
+	combo_port.AddString(TEXT("算法板"));
+	//combo_aaaaa.AddString(TEXT("9000"));
 	combo_c.SetCurSel(0);
+	combo_port.SetCurSel(1);
 	
 	this->left_point = 18;
+	//this->left_pointPort = 20;
+	//this->left_pointaaaaa = 18;
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -298,8 +309,20 @@ void CMarsDemarcateDlg::OnBnClickedButtonConnect()
 		{
 			editInfo.ReplaceSel(L"创建失败\r\n");
 		}
-		int nPort = 8880;
+		//int nPort = 8889;
+		//int nPort = 8880;
+		//int nPort = 9000;//给刘哥发服务器端口号
 
+		int index = combo_port.GetCurSel();//获取当前索引
+
+		CString str;
+		combo_port.GetLBText(index, str);
+
+		int nPort;
+		if(str="算法板")
+			nPort=8880;
+		if (str = "部标机")
+			nPort = 8889;
 		if (cSocket.Connect(strIP, nPort)){
 			editInfo.ReplaceSel(L"连接成功\r\n");
 		}
@@ -1015,25 +1038,47 @@ void CMarsDemarcateDlg::OnBnClickedButtonFileSend()
 		AfxMessageBox(_T("未选择传输文件！"));
 		return;
 	}
+	//新增判断8880和8889端口是否验证ok
+	int index = combo_port.GetCurSel();//获取当前索引
 
-	char hdr[72] = { "xnis" };
-	int n = strDemarcatefile.ReverseFind('\\') + 1;
-	CString strPath = strDemarcatefile.Right(strDemarcatefile.GetLength() - n);
-	WideCharToMultiByte(CP_ACP, 0, strPath, strPath.GetLength(), &hdr[4], 64, NULL, NULL);
-
+	CString str;
+	combo_port.GetLBText(index, str);
 	UINT check = 0, size = 0;
-	CFileStatus fileStatus;
-	CFile::GetStatus(strDemarcatefile, fileStatus);
-	size = fileStatus.m_size;
+	if (str == "算法板") {
+		char hdr[72] = { "xnis" };
+		int n = strDemarcatefile.ReverseFind('\\') + 1;
+		CString strPath = strDemarcatefile.Right(strDemarcatefile.GetLength() - n);
+		WideCharToMultiByte(CP_ACP, 0, strPath, strPath.GetLength(), &hdr[4], 64, NULL, NULL);
+		CFileStatus fileStatus;
+		CFile::GetStatus(strDemarcatefile, fileStatus);
+		size = fileStatus.m_size;
 
-	memcpy(&hdr[68], &size, 4);
+		memcpy(&hdr[68], &size, 4);
 
-	cSocket.Send(hdr, 72);
+		cSocket.Send(hdr, 72);
+	}
+	else if (str == "部标机") {
+		char hdr[74] = { "xnadas" };
+		int n = strDemarcatefile.ReverseFind('\\') + 1;
+		CString strPath = strDemarcatefile.Right(strDemarcatefile.GetLength() - n);
+		WideCharToMultiByte(CP_ACP, 0, strPath, strPath.GetLength(), &hdr[6], 64, NULL, NULL);
+
+		CFileStatus fileStatus;
+		CFile::GetStatus(strDemarcatefile, fileStatus);
+		size = fileStatus.m_size;
+
+		memcpy(&hdr[70], &size, 4);
+		//hdr[74] = 0;
+		//hdr[75] = 0;
+		cSocket.Send(hdr, 74);
+	}
 
 	char revData[1024] = { 0 };
+	//给刘哥发需要注掉
 	//接收服务器发送回来的内容(该方法会阻塞, 在此等待有内容接收到才继续向下执行)
 	cSocket.Receive(revData, 1024);
 
+	
 	if (strcmp(revData, "ready go")) {
 		editInfo.ReplaceSel(L"文件错误\r\n");
 		cSocket.Close();
@@ -1074,12 +1119,23 @@ void CMarsDemarcateDlg::OnBnClickedButtonFileSend()
 		//memset(revData, 0, 1024);
 		//cSocket.Receive(revData, 1024);
 	}
-	memset(revData, 0, 1024);
-	cSocket.Receive(revData, 1024);
-	if (strcmp(revData, "ok")) {
-		editInfo.ReplaceSel(L"文件校验失败，请重新升级\r\n");
+	
+
+
+	if (str == "算法板") {
+		//验证ok
+		memset(revData, 0, 1024);
+		cSocket.Receive(revData, 1024);
+		if (strcmp(revData, "ok")) {
+			editInfo.ReplaceSel(L"文件校验失败，请重新升级\r\n");
+		}
+		else {
+			editInfo.ReplaceSel(L"文件传输完成\r\n");
+		}
 	}
-	else {
+	else if ((str == "部标机"))
+	{
+		//不验证ok
 		editInfo.ReplaceSel(L"文件传输完成\r\n");
 	}
 
@@ -1476,3 +1532,43 @@ void CMarsDemarcateDlg::OnCbnSelchangeCombo1()
 	}
 	jp6_camera._left_point_detection = this->left_point;
 }
+
+//通过下拉框改变端口号
+void CMarsDemarcateDlg::OnCbnSelchangeComboPort()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int index = combo_port.GetCurSel();//获取当前索引
+
+	CString str;
+	combo_port.GetLBText(index, str);
+	if (str == "8880") {
+		//this->left_pointPort = 20;
+
+		//MessageBox(str);
+	}
+	else if ((str == "8889"))
+	{
+		//this->left_pointPort = 0;
+	}
+
+}
+
+
+//void CMarsDemarcateDlg::OnselectPort()
+//{
+//	// TODO: 在此添加控件通知处理程序代码
+//	int index = combo_aaaaa.GetCurSel();//获取当前索引
+//
+//	CString str;
+//	combo_aaaaa.GetLBText(index, str);
+//	if (str == "8880") {
+//		this->left_pointaaaaa = 18;
+//
+//		//MessageBox(str);
+//	}
+//	else if ((str == "8889"))
+//	{
+//		this->left_pointaaaaa = 0;
+//	}
+//	jp6_camera._left_point_detectionaaaaa = this->left_pointaaaaa;
+//}

@@ -36,7 +36,9 @@ public:
 	HANDLE hThread;
 	DWORD ThreadID;
 	float an;
-	int left_point;
+	int left_point; 
+	//int left_pointPort;
+	//int left_pointaaaaa;
 	CString strDemarcatefile;
 	enum demarcate_proto { D_START, LANE_D, FACE_D, CAB_D ,UP,DOWN,LEFT,RIGHT,AMP,SHR,SAVE};
 	afx_msg void OnBnClickedButtonUp();
@@ -47,6 +49,8 @@ public:
 	CIPAddressCtrl ipToD;
 	CIPAddressCtrl ipToD2;
 	CComboBox combo_c;
+	//CComboBox combo_aaaaa;
+	CComboBox combo_port;
 	bool ipTOD_in = false;
 	CEdit editInfo;
 	afx_msg void OnBnClickedButtonDemarcate();
@@ -95,4 +99,6 @@ public:
 	afx_msg void OnBnClickedCal();
 	afx_msg void OnBnClickedCFace();
 	afx_msg void OnCbnSelchangeCombo1();
+	afx_msg void OnCbnSelchangeComboPort();
+	afx_msg void OnselectPort();
 };

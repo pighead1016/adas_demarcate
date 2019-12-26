@@ -1526,7 +1526,7 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 			if (this->face_num == 1) {
 				center_turn_data.push_back(this->face_nx);
 				center_ear_data.push_back(this->face_nx);
-				sprintf_s(buf, "%0.4f %d", this->face_nx, center_turn_data.size());
+				sprintf_s(buf, "%0.4f Y%0.4d", this->face_nx, this->face_ny);
 				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
 				wchar_t *wide = new wchar_t[num];
 

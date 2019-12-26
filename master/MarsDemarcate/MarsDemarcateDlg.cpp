@@ -936,14 +936,14 @@ int CMarsDemarcateDlg:: save_config(struct adas_camera * p)
 	fprintf(fp, "_lane_y=%d\n", p->_lane_y);
 	fprintf(fp, "_lane_width=%d\n", p->_lane_width);
 	fprintf(fp, "_lane_height=%d\n", p->_lane_height);
-	fprintf(fp, "_face_x=%d\n", p->_face_x);
-	fprintf(fp, "_face_y=%d\n", p->_face_y);
-	fprintf(fp, "_face_width=%d\n", p->_face_width);
-	fprintf(fp, "_face_height=%d\n", p->_face_height);
-	fprintf(fp, "_peo_num_x=%d\n", p->_peo_num_x);
-	fprintf(fp, "_peo_num_y=%d\n", p->_peo_num_y);
-	fprintf(fp, "_peo_num_width=%d\n", p->_peo_num_width);
-	fprintf(fp, "_peo_num_height=%d\n", p->_peo_num_height);
+	fprintf(fp, "_face_x=%d\n", p->_face_x / 2 * 2);
+	fprintf(fp, "_face_y=%d\n", p->_face_y / 2 * 2);
+	fprintf(fp, "_face_width=%d\n", p->_face_width / 2 * 2);
+	fprintf(fp, "_face_height=%d\n", p->_face_height / 2 * 2);
+	fprintf(fp, "_peo_num_x=%d\n", p->_peo_num_x / 2 * 2);
+	fprintf(fp, "_peo_num_y=%d\n", p->_peo_num_y / 2 * 2);
+	fprintf(fp, "_peo_num_width=%d\n", p->_peo_num_width / 2 * 2);
+	fprintf(fp, "_peo_num_height=%d\n", p->_peo_num_height / 2 * 2);
 	fprintf(fp, "_left_point_x=%f\n", p->_left_point_x);
 	fprintf(fp, "_left_point_y=%f\n", p->_left_point_y);
 	fprintf(fp, "_left_angle=%f\n", p->_left_angle);
@@ -1526,7 +1526,7 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 			if (this->face_num == 1) {
 				center_turn_data.push_back(this->face_nx);
 				center_ear_data.push_back(this->face_nx);
-				sprintf_s(buf, "%0.4f Y%0.4d", this->face_nx, this->face_ny);
+				sprintf_s(buf, "%0.3f Y%0.3f", this->face_nx, this->face_ny);
 				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
 				wchar_t *wide = new wchar_t[num];
 

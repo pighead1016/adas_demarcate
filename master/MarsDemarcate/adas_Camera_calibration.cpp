@@ -99,8 +99,12 @@ void face_camera(cv::Mat frame_full,int seeta_bool=0)
 			Rect rect_face = cv::Rect(face.pos.x, face.pos.y, face.pos.width, face.pos.height);
 			Point2f mid((rotate_p[36].x + rotate_p[37].x) / 2, (rotate_p[36].y + rotate_p[37].y) / 2);
 			Point2f mouse_mid((rotate_p[46].x + rotate_p[47].x) / 2, (rotate_p[46].y + rotate_p[47].y) / 2);
-			nx = (rect_face.x - points[35].x) / rect_face.width;
-			ny = (rect_face.y - points[35].y) / rect_face.height;
+			int x = rect_face.x + rect_face.width / 2;
+			int y = rect_face.y + rect_face.height / 2;
+			nx = (x - points[35].x) / rect_face.width;
+			ny = (y - points[35].y) / rect_face.height;
+			//rectangle(face_temp, rect_face, Scalar(0, 0, 255), 3);
+			//circle(face_temp, Point(points[35].x, points[35].y), 2, Scalar(0, 0, 255), -1);
 			float nose_y = ((points[34].y - rect_face.y) / rect_face.height - 0.5)*0.8;
 			float mid_diff = (mid.x - rotate_p[62].x) / (rotate_p[63].x - rotate_p[62].x);
 			float phone_w = rotate_p[63].x - rotate_p[62].x;

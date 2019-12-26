@@ -44,6 +44,6 @@ struct adas_camera
 };
 
 void camera(cv::Mat frame_full);
-void face_camera(cv::Mat frame_full);
+void face_camera(cv::Mat frame_full,int useseeta);
 void peonum_camera(cv::Mat frame_full);
 void lane_camera_box(cv::Mat frame_full);

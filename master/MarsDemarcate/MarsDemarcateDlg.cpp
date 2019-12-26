@@ -18,6 +18,8 @@ float mean_center = 0, std_center = 0, mean_left = 0, std_left = 0, mean_right =
 
 extern cv::Mat face_temp;
 extern ncnn::Net nose_arm_mark;
+extern float nx, ny;
+extern int face_num_seeta;
 CSocket cSocket;
 CSocket cSocketServer;
 extern adas_camera jp6_camera;
@@ -342,6 +344,7 @@ struct d_stream_hdr {
 
 
 extern cv::Mat frame_full;
+extern bool face_camera_bool;
 BOOL show_flag = TRUE;
 UINT  getStreamFunction(LPVOID  pParam)
 {
@@ -419,7 +422,7 @@ UINT  laneStream(LPVOID  pParam)
 UINT  faceStream(LPVOID  pParam)
 {
 	CMarsDemarcateDlg* dlg = (CMarsDemarcateDlg*)pParam;
-
+	int seeta_bool = dlg->seetause;
 	CString strIP2;
 	BYTE nnf1, nnf2, nnf3, nnf4;
 	dlg->ipToD2.GetAddress(nnf1, nnf2, nnf3, nnf4);
@@ -439,8 +442,8 @@ UINT  faceStream(LPVOID  pParam)
 		cap.read(frame_full);
 		//frame_full = imread("卞师傅/正面.jpg");
 		cv::namedWindow("face_show");
-
-		face_camera(frame_full);
+		if(face_camera_bool)
+		face_camera(frame_full, seeta_bool);
 
 
 	}
@@ -510,15 +513,27 @@ void CMarsDemarcateDlg::OnBnClickedButtonLaneDemarcate()
 //人脸标定	
 void CMarsDemarcateDlg::OnBnClickedButtonFaceDemarcate2()
 {
+	
+	CString str;
+	editLaneRANGE.GetWindowTextW(str);
+	this->an = _ttof(str);
+	int index = combo_port.GetCurSel();//获取当前索引
+	combo_port.GetLBText(index, str);
+
+	if (str == "算法板")
+		this->seetause = 0;
+	else if(str == "部标机")
+		this->seetause = 1;
+	else
+		this->seetause = 0;
+	
 	// TODO: 在此添加控件通知处理程序代码
-	init_nose_arm_mark("arm25.param","arm25.bin");
+	if(!this->seetause)
+	init_nose_arm_mark("arm25.param", "arm25.bin");
 	//init_nose_arm_mark("xn_pose.param", "xn_pose.bin");
 	left_turn_data.clear();
 	right_turn_data.clear();
 	right_turn_data.clear();
-	CString str;
-	editLaneRANGE.GetWindowTextW(str);
-	this->an = _ttof(str);
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)faceStream, this, 0, &ThreadID);
 
 }
@@ -1287,6 +1302,9 @@ void CMarsDemarcateDlg::OnBnClickedLFace()
 	// TODO: 在此添加控件通知处理程序代码
 	face_state = 1;//left
 	face_click = face_temp.clone();
+	this->face_num = face_num_seeta;
+	this->face_nx = nx;
+	this->face_ny = ny;
 	imshow("left_face", face_click);
 	destroyWindow("right_face");
 	destroyWindow("center_face");
@@ -1298,6 +1316,9 @@ void CMarsDemarcateDlg::OnBnClickedRFace()
 	// TODO: 在此添加控件通知处理程序代码
 	face_state = 2;//right
 	face_click = face_temp.clone();
+	this->face_num = face_num_seeta;
+	this->face_nx = nx;
+	this->face_ny = ny;
 	imshow("right_face", face_click);
 	destroyWindow("center_face");
 	destroyWindow("left_face");
@@ -1410,32 +1431,42 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_L.SetSel(0, -1);
-		bool ret;
-		//std::vector<cv::String> fils;
-		//cv::glob("d://workspace/l*.jpg", fils);
-		//for (int i = 0; i < fils.size(); i++) {
-		//	gray = imread(fils[i],0);
-		//	cv::imshow("gray", gray);
-		//	cv::waitKey(50);
-			ret=key_point(gray, p, rear_angle, turnface, turn_ear, peo_num,this->left_point);
-		//}
-		if (peo_num == 1&& turn_ear != 10 && ret==true) {
-			left_turn_data.push_back(turn_ear);
-			sprintf_s(buf, "%0.4f %d", turn_ear, left_turn_data.size());
-			int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
-			wchar_t *wide = new wchar_t[num];
+		if (this->seetause) {
+			if (this->face_num == 1) {
+				left_turn_data.push_back(this->face_nx);
+				sprintf_s(buf, "%0.4f %d", this->face_nx, left_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
 
-			MultiByteToWideChar(0, 0, buf, -1, wide, num);
-			
-			editNOSE_L.ReplaceSel(wide);
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
 
-			//editNOSE_L.ReplaceSel(L"123");
-
-			delete[] wide;
+				editNOSE_L.ReplaceSel(wide);
+				delete[] wide;
+			}
+			else
+				editNOSE_L.ReplaceSel(L"not one face");
 		}
-		else{
-			editNOSE_L.ReplaceSel(L"not one face");
-			cv::imwrite("L.jpg", face_click);
+		else {
+			bool ret;
+			ret = key_point(gray, p, rear_angle, turnface, turn_ear, peo_num, this->left_point);
+			if (peo_num == 1 && turn_ear != 10 && ret == true) {
+				left_turn_data.push_back(turn_ear);
+				sprintf_s(buf, "%0.4f %d", turn_ear, left_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
+
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
+
+				editNOSE_L.ReplaceSel(wide);
+
+				//editNOSE_L.ReplaceSel(L"123");
+
+				delete[] wide;
+			}
+			else {
+				editNOSE_L.ReplaceSel(L"not one face");
+				//cv::imwrite("L.jpg", face_click);
+			}
 		}
 
 	}
@@ -1448,24 +1479,38 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_R.SetSel(0, -1);
-		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num,  this->left_point);
-		if (peo_num == 1&& turnface!=10) {
-			right_turn_data.push_back(turnface);
-			sprintf_s(buf, "%0.4f %d", turnface, right_turn_data.size());
-			int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
-			wchar_t *wide = new wchar_t[num];
+		if (this->seetause) {
+			if (this->face_num == 1) {
+				right_turn_data.push_back(this->face_nx);
+				sprintf_s(buf, "%0.4f %d", this->face_nx, right_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
 
-			MultiByteToWideChar(0, 0, buf, -1, wide, num);
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
 
-			editNOSE_R.ReplaceSel(wide);
-
-
-
-			delete[] wide;
+				editNOSE_R.ReplaceSel(wide);
+				delete[] wide;
+			}
+			else
+				editNOSE_R.ReplaceSel(L"not one face");
 		}
 		else {
-			editNOSE_R.ReplaceSel(L"not one face");
-			cv::imwrite("R.jpg", face_click);
+			key_point(gray, p, rear_angle, turnface, turn_ear, peo_num, this->left_point);
+			if (peo_num == 1 && turnface != 10) {
+				right_turn_data.push_back(turnface);
+				sprintf_s(buf, "%0.4f %d", turnface, right_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
+
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
+
+				editNOSE_R.ReplaceSel(wide);
+				delete[] wide;
+			}
+			else {
+				editNOSE_R.ReplaceSel(L"not one face");
+				//cv::imwrite("R.jpg", face_click);
+			}
 		}
 	}
 	if (face_state == 3) {
@@ -1477,20 +1522,38 @@ void CMarsDemarcateDlg::OnBnClickedCal()
 		//cvtColor(gray, gray, CV_GRAY2BGR);
 		cv::Point2f p;
 		editNOSE_C.SetSel(0, -1);
-		key_point(gray, p, rear_angle, turnface, turn_ear,peo_num, this->left_point);
-		if (peo_num == 1&& turnface!=10&& turn_ear!=10) {
-			center_turn_data.push_back(turnface);
-			center_ear_data.push_back(turn_ear);
-			sprintf_s(buf, "%0.2f %0.2f %d", turnface, turn_ear, right_turn_data.size());
-			int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
-			wchar_t *wide = new wchar_t[num];
-			MultiByteToWideChar(0, 0, buf, -1, wide, num);
-			editNOSE_C.ReplaceSel(wide);
-			delete[] wide;
+		if (this->seetause) {
+			if (this->face_num == 1) {
+				center_turn_data.push_back(this->face_nx);
+				center_ear_data.push_back(this->face_nx);
+				sprintf_s(buf, "%0.4f %d", this->face_nx, center_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
+
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
+
+				editNOSE_C.ReplaceSel(wide);
+				delete[] wide;
+			}
+			else
+				editNOSE_C.ReplaceSel(L"not one face");
 		}
-		else{
-			editNOSE_C.ReplaceSel(L"not one face");
-			cv::imwrite("C.jpg", face_click);
+		else {
+			key_point(gray, p, rear_angle, turnface, turn_ear, peo_num, this->left_point);
+			if (peo_num == 1 && turnface != 10 && turn_ear != 10) {
+				center_turn_data.push_back(turnface);
+				center_ear_data.push_back(turn_ear);
+				sprintf_s(buf, "%0.2f %0.2f %d", turnface, turn_ear, right_turn_data.size());
+				int num = MultiByteToWideChar(0, 0, buf, -1, NULL, 0);
+				wchar_t *wide = new wchar_t[num];
+				MultiByteToWideChar(0, 0, buf, -1, wide, num);
+				editNOSE_C.ReplaceSel(wide);
+				delete[] wide;
+			}
+			else {
+				editNOSE_C.ReplaceSel(L"not one face");
+				//cv::imwrite("C.jpg", face_click);
+			}
 		}
 	}
 	if (face_state == 1)
@@ -1508,6 +1571,9 @@ void CMarsDemarcateDlg::OnBnClickedCFace()
 	// TODO: 在此添加控件通知处理程序代码
 	face_state = 3;//right
 	face_click = face_temp.clone();
+	this->face_num = face_num_seeta;
+	this->face_nx = nx;
+	this->face_ny = ny;
 	imshow("center_face", face_click);
 	destroyWindow("right_face");
 	destroyWindow("left_face");

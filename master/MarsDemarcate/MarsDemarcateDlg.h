@@ -36,6 +36,9 @@ public:
 	HANDLE hThread;
 	DWORD ThreadID;
 	float an;
+	int seetause;
+	int face_num;
+	float face_nx, face_ny;
 	int left_point; 
 	//int left_pointPort;
 	//int left_pointaaaaa;

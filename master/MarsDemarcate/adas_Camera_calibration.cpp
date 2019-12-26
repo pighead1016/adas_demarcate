@@ -1,9 +1,14 @@
 #include "stdafx.h"
 #include "camera_calibration.h"
+#include <seeta/FaceDetector.h>
+#include <seeta/FaceLandmarker.h>
 
+#include <seeta/Struct_cv.h>
+#include <seeta/Struct.h>
 adas_camera jp6_camera;
-
-
+float nx, ny;
+bool face_camera_bool = true;
+int face_num_seeta = 0;
 void camera(cv::Mat frame_full)
 {
 	cv::Mat small;
@@ -14,9 +19,16 @@ void camera(cv::Mat frame_full)
 	cv::waitKey(1);
 }
 Mat face_temp;
-void face_camera(cv::Mat frame_full)
+seeta::ModelSetting::Device device = seeta::ModelSetting::CPU;
+int id = 0;
+seeta::ModelSetting FD_model("./fd_2_00.dat", device, id);
+seeta::ModelSetting FL_model("./pd_2_00_pts81.dat", device, id);
+
+seeta::FaceDetector FD(FD_model);
+seeta::FaceLandmarker FL(FL_model);
+void face_camera(cv::Mat frame_full,int seeta_bool=0)
 {
-	
+	face_camera_bool = false;
 	cv::Rect rect(jp6_camera._face_x, jp6_camera._face_y, jp6_camera._face_width, jp6_camera._face_height);
 	cv::Mat face_show;
 	int aaaa = 0;
@@ -31,6 +43,7 @@ void face_camera(cv::Mat frame_full)
 		line(face_show, Point(face_show.cols*c / ran, 0), Point(face_show.cols*c / ran, face_show.rows), Scalar(128, 128, 128), 2);
 		putText(face_show, num, Point(face_show.cols*(c - 0.3) / ran, 20), 1, 1, Scalar(255, 255, 255));
 	}*/
+	
 	Mat face_mask_show=imread("mask.png",0);
 	cv::threshold(face_mask_show, face_mask_show, 0, 255, 8);
 	
@@ -46,13 +59,93 @@ void face_camera(cv::Mat frame_full)
 	cv::findContours(mask, p, 0, 2);
 	cvtColor(mask, mask, CV_GRAY2BGR);
 
-	Mat add_mask_show;
+	Mat add_mask_show, rotate_mat;
+
 	resize(mask, mask, face_temp.size());
+	
+	if(seeta_bool){
+		seeta::cv::ImageData simage = face_temp;
+		
+		auto faces = FD.detect(simage);
+		face_num_seeta = faces.size;
+		if (faces.size == 1)
+		{
+			auto &face = faces.data[0];
+			auto points = FL.mark(simage, face.pos);
+			float det_th = atan2f(points[9].y - points[0].y, points[9].x - points[0].x) * 180 / M_PI;
+			std::vector<cv::Point2d> rotate_p(81);
+			int p_num = 0;
+			Mat rotate = getRotationMatrix2D(Point(points[34].x, points[34].y), det_th, 1) ;
+			Mat full_rotate = (Mat_<double>(3, 3) << 0, 0, 0, 0, 0, 0, 0, 0, 1);
+			rotate.copyTo(full_rotate.rowRange(0, 2));
+			Mat inv_rotate=full_rotate.inv();
+			warpAffine(face_temp, rotate_mat, rotate, face_temp.size());
+			for (auto &point : points)
+			{
+				Mat p = (Mat_<double>(3, 1) << point.x, point.y, 1.0);
+				Mat rop = rotate*p;//cv::circle(frame, cv::Point(point.x, point.y), 2, CV_RGB(128, 255, 128), -1);
+				rotate_p[p_num].x = rop.at<double>(0);
+				rotate_p[p_num].y = rop.at<double>(1);
+
+				//cv::circle(rotate_mat, rotate_p[p_num], 2, CV_RGB(128, 255, 128), -1);
+				p_num++;
+			}
+			
+
+
+
+
+
+			Rect rect_face = cv::Rect(face.pos.x, face.pos.y, face.pos.width, face.pos.height);
+			Point2f mid((rotate_p[36].x + rotate_p[37].x) / 2, (rotate_p[36].y + rotate_p[37].y) / 2);
+			Point2f mouse_mid((rotate_p[46].x + rotate_p[47].x) / 2, (rotate_p[46].y + rotate_p[47].y) / 2);
+			nx = (rect_face.x - points[35].x) / rect_face.width;
+			ny = (rect_face.y - points[35].y) / rect_face.height;
+			float nose_y = ((points[34].y - rect_face.y) / rect_face.height - 0.5)*0.8;
+			float mid_diff = (mid.x - rotate_p[62].x) / (rotate_p[63].x - rotate_p[62].x);
+			float phone_w = rotate_p[63].x - rotate_p[62].x;
+			float phone_h = (mouse_mid.y - mid.y)*1.2;
+			float wdiff = 0.5;
+			float w = 1;
+			float det_w = fabs(mid_diff - 0.5);
+			Rect smone_rect;
+			if (mid_diff > 0.5)
+			{
+				smone_rect.x = rotate_p[62].x + ((mid_diff - 0.5)*1.5 - w)*phone_w;//left
+				smone_rect.y = (rotate_p[46].y + rotate_p[47].y) / 2 - nose_y*rect_face.height - phone_h*0.8;
+				smone_rect.width = rotate_p[63].x + phone_w*(w + det_w / 2) - smone_rect.x;
+				smone_rect.height = phone_h * 2.8;
+			}
+			else
+			{
+				smone_rect.x = rotate_p[62].x - ((0.5 - mid_diff) * 0 + w)*phone_w;
+				smone_rect.y = (rotate_p[46].y + rotate_p[47].y) / 2 - nose_y*rect_face.height - phone_h*0.8;
+				smone_rect.width = rotate_p[63].x - (0.5 - mid_diff)*1.5*phone_w + phone_w*(w + det_w) - smone_rect.x;
+				smone_rect.height = phone_h * 2.8;
+			}
+			rectangle(rotate_mat, smone_rect, cv::Scalar(255, 0, 255), 4);
+			Mat rect_p = (Mat_<double>(4,3) << 
+				smone_rect.x, smone_rect.y ,1, 
+				smone_rect.x, smone_rect.y + smone_rect.height,1,
+				smone_rect.x + smone_rect.width, smone_rect.y + smone_rect.height,1, 
+				smone_rect.x + smone_rect.width, smone_rect.y , 1);
+			Mat rotate_point = inv_rotate*rect_p.t();
+			//imshow("face", rotate_mat);
+			
+			for (int i = 0; i < 4; i++) {
+				Point p1 = Point(rotate_point.at<double>(0, i), rotate_point.at<double>(1, i));
+				Point p2 = Point(rotate_point.at<double>(0, (i + 1) % 4), rotate_point.at<double>(1, (i + 1) % 4));
+				line(face_temp,p1 , p2, Scalar(200, 0, 200), 4);
+			}
+			//imshow("ro_face", face_temp);
+		}
+		
+	}
 	addWeighted(face_temp, 0.5, mask, 0.5, 0, add_mask_show);
 	cv::imshow("face_show", add_mask_show);
-
 	//cv::imshow("face_show", face_temp);
 	cv::waitKey(1);
+	face_camera_bool = true;
 }
 
 void peonum_camera(cv::Mat frame_full)

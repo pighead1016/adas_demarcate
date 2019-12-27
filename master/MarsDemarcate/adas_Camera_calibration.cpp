@@ -65,7 +65,11 @@ void face_camera(cv::Mat frame_full,int seeta_bool=0)
 	
 	if(seeta_bool){
 		seeta::cv::ImageData simage = face_temp;
-		
+		FD.set(seeta::FaceDetector::PROPERTY_MIN_FACE_SIZE,60);
+		FD.set(seeta::FaceDetector::PROPERTY_THRESHOLD1,0.6);
+		FD.set(seeta::FaceDetector::PROPERTY_THRESHOLD2,0.5);
+		FD.set(seeta::FaceDetector::PROPERTY_THRESHOLD3,0.7);
+		FD.set(seeta::FaceDetector::PROPERTY_VIDEO_STABLE,1);
 		auto faces = FD.detect(simage);
 		face_num_seeta = faces.size;
 		if (faces.size == 1)

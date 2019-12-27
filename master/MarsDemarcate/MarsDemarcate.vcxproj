@@ -165,7 +165,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -191,6 +191,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="camera_calibration.h" />
+    <ClInclude Include="cfg_common.h" />
     <ClInclude Include="Dstmap.h" />
     <ClInclude Include="line.h" />
     <ClInclude Include="MarsDemarcate.h" />
@@ -201,6 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="adas_Camera_calibration.cpp" />
+    <ClCompile Include="cfg_common.cpp" />
     <ClCompile Include="Dstmap.cpp" />
     <ClCompile Include="line.cpp" />
     <ClCompile Include="MarsDemarcate.cpp" />

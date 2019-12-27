@@ -9,6 +9,7 @@
 #include <opencv2/opencv.hpp>
 #include "camera_calibration.h"
 #include "mars_smokephone.h"
+#include "cfg_common.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -33,7 +34,117 @@ extern bool right_lock;//click
 //extern float change_angle, left_shouder, right_shouder, left_nose, right_nose;
 char * videoadd = "rtsp://admin:@192.168.0.169:554/mode=real&idc=1&ids=1";
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
+#define XN_IS_CONFIG_PATH "demarcate.cfg"
+//adas_camera jp6_9003;
+void cfg_init()
+{
+	char sValue[50] = { 0 };
+	char sKey[50] = "_center_x";
 
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+
+		jp6_camera._center_x = atoi(sValue);			//
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_center_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._center_y = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_radius");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._radius = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_lane_x");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._lane_x = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_lane_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._lane_y = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_lane_width");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._lane_width = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_lane_height");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._lane_height = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_face_x");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._face_x = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_face_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._face_y = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_face_width");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._face_width = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_face_height");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._face_height = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_peo_num_x");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._peo_num_x = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_peo_num_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._peo_num_y = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_peo_num_width");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._peo_num_width = atoi(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_peo_num_height");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._peo_num_height = atoi(sValue);
+
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_left_point_x");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._left_point_x = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_left_point_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._left_point_y = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_left_angle");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._left_angle = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_right_point_x");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._right_point_x = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_right_point_y");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._right_point_y = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_right_angle");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._right_angle = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_double_lane_dis");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._double_lane_dis = atof(sValue);
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_change_angle");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._change_angle = atof(sValue);
+
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_left_turn");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._left_turn = atof(sValue);
+
+	memset(sValue, 0, 50);
+	sprintf_s(sKey, "_right_turn");
+	if (readParameter(XN_IS_CONFIG_PATH, sKey, sValue) == 0)
+		jp6_camera._right_turn = atof(sValue);
+
+}
 class CAboutDlg : public CDialogEx
 {
 public:
@@ -214,6 +325,7 @@ BOOL CMarsDemarcateDlg::OnInitDialog()
 	this->left_point = 18;
 	//this->left_pointPort = 20;
 	//this->left_pointaaaaa = 18;
+	cfg_init();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -452,7 +564,7 @@ UINT  faceStream(LPVOID  pParam)
 	cv::destroyAllWindows();
 	return 0;
 }
-
+Mat peo_num_img;
 UINT  peonumStream(LPVOID  pParam)
 {
 	CMarsDemarcateDlg* dlg = (CMarsDemarcateDlg*)pParam;
@@ -474,11 +586,13 @@ UINT  peonumStream(LPVOID  pParam)
 		if (!show_flag)
 			break;
 		cap.read(frame_full_org);
+		if (frame_full_org.empty())
+			continue;
 		cv::namedWindow("peo_show");
 		Mat rotate = getRotationMatrix2D(Point(jp6_camera._center_x, jp6_camera._center_y), -16, 1);
 		warpAffine(frame_full_org, frame_full, rotate, Size(1632, 1632));
 		peonum_camera(frame_full);
-		
+		peo_num_img= frame_full.clone();
 
 	}
 	frame_full.release();
@@ -834,7 +948,15 @@ void CMarsDemarcateDlg::OnBnClickedButtonSure()
 
 		nose_arm_mark.clear();
 	}
-
+	if (d_state == 3)
+	{
+		cv::Rect rect(jp6_camera._peo_num_x, jp6_camera._peo_num_y, jp6_camera._peo_num_width, jp6_camera._peo_num_height);
+		cv::Mat peo_show;
+		flip(peo_num_img(rect), peo_show, 0);
+		cv::cvtColor(peo_show, peo_show, CV_BGR2GRAY);
+		int peo_num = 0;
+		//key_people_num(peo_show,peo_num,"xn_pose.param","xn_pose.bin");
+	}
 	show_flag = FALSE;
 	CloseHandle(hThread);
 }

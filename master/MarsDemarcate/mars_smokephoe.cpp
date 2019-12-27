@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <vector>
-
+//#define arm19
 using namespace std;
 using std::string;
 /* Pair (label, confidence) representing a prediction. */
@@ -99,6 +99,12 @@ struct BlobData {
 	int capacity_count;		//����ռ��Ԫ�ظ������ȣ��ֽ����� * sizeof(float)
 };
 //const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,17 };
+#ifdef arm19
+const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,17 };
+const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1, 2, 1, 5, 2, 3, 3, 4, 5, 6, 6, 7
+,1, 8, 8, 9, 9, 10, 1, 11, 11, 12, 12, 13, 1, 0, 0, 14, 14, 16, 0, 15, 15, 17 };
+const unsigned int POSE_MAX_PEOPLE = 95;
+#else
 const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1 , 8,1, 2 , 1, 5,
 2, 3, 3, 4, 5, 6, 6, 7,
 8, 9, 8,12,
@@ -107,8 +113,14 @@ const std::vector<unsigned int> POSE_COCO_PAIRS_RENDER{ 1 , 8,1, 2 , 1, 5,
 1, 0, 0,16, 0,15,15,17,16,18,
 2,17, 5,18 };
 
+
+const std::vector<unsigned int> TIRED_RENDER{ 0,2,5,18 };
 const unsigned int POSE_MAX_PEOPLE = 5;
-const std::vector<unsigned int> TIRED_RENDER{ 0,2,5};
+#endif
+
+
+
+//const std::vector<unsigned int> TIRED_RENDER{ 0,2,5};
 const std::vector<unsigned int> FACE_RENDER{ 0,15,16,17,18 };
 const std::vector<unsigned int> EYESHOUDER_RENDER{ 15,16,2,5,1 };
 //656x368
@@ -138,27 +150,30 @@ void connectBodyPartsCpu(vector<float>& poseKeypoints, const float* const heatMa
 	const float interThreshold, const int minSubsetCnt, const float minSubsetScore, const float scaleFactor, vector<int>& keypointShape)
 {
 	keypointShape.resize(3);
-	/*******************body 19************************
-	const std::vector<unsigned int> POSE_COCO_PAIRS{  1, 5 , 1, 2,
+#ifdef arm19
+	/*******************body 19************************/
+	const std::vector<unsigned int> POSE_COCO_PAIRS{ 1, 0, 1, 5 , 1, 2,
 		2, 3, 3, 4, 5, 6, 6, 7,
 		1 , 8, 8, 9, 9,10,
 		1, 11,11,12,12,13,
-		
-		1, 0, 0,14, 14,16,0,15,15,17,
+
+		0,14, 14,16,0,15,15,17,
 		2,16, 5,17
 		//14,19,19,20,14,21,
 		//11,22,22,23,11,24
 	};
-	const std::vector<unsigned int> POSE_COCO_MAP_IDX{ 39,40,31,32,
+	const std::vector<unsigned int> POSE_COCO_MAP_IDX{ 47,48, 39,40,31,32,
 		33,34,35,36,41,42,43,44,
 		19,20,21,22,23,24,
 		25,26,27,28,29,30,
 
-		47,48,49,50,53,54,51,52,55,56,
+		49,50,53,54,51,52,55,56,
 		37,38,45,46
 		//66,67,68,69,70,71,
 		//72,73,74,75,76,77
-	};/*
+	};/**/
+	const auto numberBodyParts = 18;//change from 25
+#else
 	/*******************body 25************************/
 	const std::vector<unsigned int> POSE_COCO_PAIRS{ 1 , 8,1, 2 , 1, 5,
 		2, 3, 3, 4, 5, 6, 6, 7,
@@ -180,11 +195,12 @@ void connectBodyPartsCpu(vector<float>& poseKeypoints, const float* const heatMa
 		//66,67,68,69,70,71,
 		//72,73,74,75,76,77
 	};
-	
-	/****************************************************/
+	const auto numberBodyParts = 25;//change from 25
+#endif
+
 	const auto& bodyPartPairs = POSE_COCO_PAIRS;
 	const auto& mapIdx = POSE_COCO_MAP_IDX;
-	const auto numberBodyParts = 25;//change from 25
+
 
 	const auto numberBodyPartPairs = bodyPartPairs.size() / 2;
 
@@ -350,7 +366,7 @@ void connectBodyPartsCpu(vector<float>& poseKeypoints, const float* const heatMa
 				}
 			}
 			// Add ears connections (in case person is looking to opposite direction to camera)
-			else if (pairIndex == 17 || pairIndex == 16)
+			else if (pairIndex == 17 || pairIndex == 18)
 			{
 				for (const auto& connectionKI : connectionK)
 				{
@@ -774,18 +790,27 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 
 	ncnn::Mat in=ncnn::Mat::from_pixels(raw_img.data,ncnn::Mat::PIXEL_RGB,input_width,input_height);
 	ncnn::Mat out;
+
+#ifndef arm19
 	const float mean_vals[3] = { 127.5f, 127.5f, 127.5f };
 	const float norm_vals[3] = { 1.0 / 255.0,1.0 / 255.0,1.0 / 255.0 };
+
 	in.substract_mean_normalize(mean_vals, norm_vals);//mobile not need mean
 
+#endif
 	ncnn::Extractor ex = nose_arm_mark.create_extractor();
 	ex.set_light_mode(true);
 	ex.set_num_threads(4);
 	//ex.input("data", in);
 
 	//ex.extract("MConv_Stage7_concat", out);
+#ifdef arm19
+	ex.input("data", in);
+	ex.extract("MConv_Stage7_concat", out);
+#else
 	ex.input("image", in);
 	ex.extract("net_output", out);
+#endif
 
 
 	BlobData* nms_out = createBlob_local(1, out.c-1, POSE_MAX_PEOPLE + 1, 3);
@@ -803,10 +828,15 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 	}
 	//��ȡÿ��feature map�ľֲ�����ֵ
 	nms(input, nms_out, 0.05);
+#ifdef arm19
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 7, 0.05, 5, 0.14, 1, shape);
+#else
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+#endif
 	//with xn_posenms(input, nms_out, 0.15); 
 	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 7, 0.2, 7, 0.14, 1, shape);
 
-	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 6, 0.4, 1, shape);
+	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 6, 0.4, 1, shape);
 	//messagefile<<"Has "<<shape[0]<<"peopel"<<std::endl;
 	//if(shape.size()>0)
 		act_peonum_temp=shape[0];
@@ -859,37 +889,112 @@ bool key_point(cv::Mat image_gray,cv::Point2f& nose_p_from_keypoint_temp,float& 
 	//renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle);
 	imshow("act", image);
 	cv::waitKey(50);*/
-	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear, left_point_detection);
-
+	//ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear, left_point_detection);
+#ifdef arm19
+	ret = renderKeypointsCpu(image, keypoints, shape, 0.053, scale, nose_p_from_keypoint_temp, rear_angle, turn_face, turn_ear, left_point_detection);
+#else
+	ret = renderKeypointsCpu(image, keypoints, shape, 0.05, scale, nose_p_from_keypoint_temp,rear_angle, turn_face, turn_ear, left_point_detection);
+#endif
 	//log_write("the nose at(%3.2f,%3.2f)\n",nose_p_from_keypoint_temp.x,nose_p_from_keypoint_temp.y);
  	releaseBlob_local(&net_output);
 	releaseBlob_local(&input);
 	releaseBlob_local(&nms_out);
 	return true;
 }
+#include <opencv2\dnn\dnn.hpp>
 bool key_people_num(cv::Mat image_gray,int & act_peonum_temp,const char* deploy,const char* weight)
 {
+	cv::Mat image;
+	cv::cvtColor(image_gray, image, CV_GRAY2BGR);
+#ifdef arm19
+	auto pose = cv::dnn::readNetFromTensorflow("graph_opt.pb");
+	cv::String inBlobName = "image";
+	cv::String outBlobName = "Openpose/concat_stage7";
+	cv::Size baseSize(224*2, 224);
+	float scale = 0;
+	cv::Mat im = getImage(image, baseSize, &scale);
+	cv::Mat inputimage = cv::dnn::blobFromImage(im, 1.0f, baseSize, cv::Scalar(), true, false);
+	pose.setInput(inputimage, inBlobName);
+	cv::Mat result = pose.forward(outBlobName);
+	
+	int outc = result.size[1];
+	int outh = result.size[3];
+	int outw = result.size[2];
+	cv::Mat sh = cv::Mat(outw*outc, outh, CV_32F, result.data);
+	BlobData* nms_out = createBlob_local(1, outc - 1, POSE_MAX_PEOPLE + 1, 3);
+	BlobData* input = createBlob_local(1, outc, baseSize.height, baseSize.width);
+	vector<float> keypoints;
+	vector<int> shape;
+	vector<cv::Mat> input_channels;
+	BlobData* net_output = createBlob_local(1, outc, outh, outw);
+	for (int i = 0; i < outc; ++i) {
+		cv::Mat um(baseSize.height, baseSize.width, CV_32F, input->list + i*baseSize.height*baseSize.width);
+		cv::resize(sh.rowRange(i*outw,i*outw+ outw), um, baseSize, 0, 0, CV_INTER_CUBIC);
+		//cv::imshow("ss", um * 255);
+		//cv::waitKey(0);
+	}
+	//��ȡÿ��feature map�ľֲ�����ֵ
+	nms(input, nms_out, 0.05);
+#ifdef arm19
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 6, 0.15, 6, 0.14, 1, shape);
+#else
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+#endif
+	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+	//messagefile<<"totle Has "<<shape[0]<<"peopel"<<std::endl;
+	//if(shape.size()>0)
+	act_peonum_temp = shape[0];
+	int numberKeypoints = shape[1];
+	for (auto person = 0; person < act_peonum_temp; person++)
+	{
+		for (size_t pn = 0; pn<POSE_COCO_PAIRS_RENDER.size(); pn += 2)
+		{
+			const int index1 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn])*shape[2];
+			const int index2 = (person*numberKeypoints + POSE_COCO_PAIRS_RENDER[pn + 1])*shape[2];
+			if (keypoints[index1]>0.05&&keypoints[index2]>0.05)
+			{
+				const cv::Point kp1(intRound(keypoints[index1] * scale), intRound(keypoints[index1 + 1] * scale));
+				const cv::Point kp2(intRound(keypoints[index2] * scale), intRound(keypoints[index2 + 1] * scale));
+				line(image, kp1, kp2, cv::Scalar(0, 128, 255), 2);
+			}
+		}
+	}
+	//renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle);
+	imwrite("act.jpg", image);
+	pose.~Net();
+	return 0;
+
+#else
+
 	ncnn::Net peo_num_reg;
 	peo_num_reg.load_param(deploy);
 	peo_num_reg.load_model(weight);
-	cv::Mat image;
-	cv::cvtColor(image_gray,image,CV_GRAY2BGR);
+
 	//bool ret=false;
-	int input_width = 192,input_height=96;
+	int input_width = 368*2,input_height=368;
 	cv::Size baseSize = cv::Size(input_width, input_height);  //Size(656, 368);
 	float scale = 0;
 	cv::Mat im = getImage(image, baseSize, &scale);
 	cv::Mat raw_img = im;
 	ncnn::Mat in=ncnn::Mat::from_pixels(raw_img.data,ncnn::Mat::PIXEL_RGB,input_width,input_height);
 	ncnn::Mat out;
+#ifndef arm19
 	const float mean_vals[3] = { 127.5f, 127.5f, 127.5f };
 	const float norm_vals[3] = { 1.0 / 255.0,1.0 / 255.0,1.0 / 255.0 };
-	in.substract_mean_normalize(mean_vals, norm_vals);
+
+	in.substract_mean_normalize(mean_vals, norm_vals);//mobile not need mean
+
+#endif
 	ncnn::Extractor ex = peo_num_reg.create_extractor();
 	ex.set_light_mode(true);
 	ex.set_num_threads(4);
+#ifdef arm19
+	ex.input("data", in);
+	ex.extract("MConv_Stage7_concat", out);
+#else
 	ex.input("image", in);
 	ex.extract("net_output", out);
+#endif
 	BlobData* nms_out = createBlob_local(1, out.c-1, POSE_MAX_PEOPLE + 1, 3);
 	BlobData* input = createBlob_local(1, out.c, baseSize.height, baseSize.width);
 	vector<float> keypoints;
@@ -899,10 +1004,17 @@ bool key_people_num(cv::Mat image_gray,int & act_peonum_temp,const char* deploy,
 	for (int i = 0; i < out.c; ++i) {
 		cv::Mat um(baseSize.height, baseSize.width, CV_32F, input->list + i*baseSize.height*baseSize.width);
 		cv::resize(cv::Mat(net_output->height, net_output->width, CV_32F, out.channel(i).data), um, baseSize, 0, 0, CV_INTER_CUBIC);
+		//cv::imshow("ss", um * 255);
+		//cv::waitKey(0);
 	}
 	//��ȡÿ��feature map�ľֲ�����ֵ
 	nms(input, nms_out, 0.05);
+#ifdef arm19
+	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 6, 0.15, 6, 0.14, 1, shape);
+#else
 	connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
+#endif
+	//connectBodyPartsCpu(keypoints, input->list, nms_out->list, baseSize, POSE_MAX_PEOPLE, 9, 0.05, 8, 0.4, 1, shape);
 	//messagefile<<"totle Has "<<shape[0]<<"peopel"<<std::endl;
 	//if(shape.size()>0)
 	act_peonum_temp=shape[0];
@@ -921,12 +1033,15 @@ bool key_people_num(cv::Mat image_gray,int & act_peonum_temp,const char* deploy,
 			}
 		}
 	}
+#endif
 	//renderKeypointsCpu(image, keypoints, shape, 0.05, scale,nose_p_from_keypoint_temp,rear_angle);
 	imwrite("act.jpg",image);
+
 	//log_write("the nose at(%3.2f,%3.2f)\n",nose_p_from_keypoint_temp.x,nose_p_from_keypoint_temp.y);
 	releaseBlob_local(&net_output);
 	releaseBlob_local(&input);
 	releaseBlob_local(&nms_out);
+
 	return true;
 }
 

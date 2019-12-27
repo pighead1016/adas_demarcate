@@ -39,6 +39,9 @@
     <ClInclude Include="line.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="cfg_common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MarsDemarcate.cpp">
@@ -60,6 +63,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="mars_smokephoe.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="cfg_common.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
